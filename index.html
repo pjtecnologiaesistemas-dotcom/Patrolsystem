@@ -184,6 +184,115 @@ body { font-family:'DM Sans',system-ui,sans-serif; background:var(--bg); min-hei
 ::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
 </style>
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCyFLm6FzXh00h0wR6Y31I5yAZqZQC_J94&libraries=geometry"></script>
+<script type="module">
+// ════════════════════════════════════════════════
+// FIREBASE — init + Firestore listeners
+// ════════════════════════════════════════════════
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCvqvOjqjHKe3KxJNcVc2ciLwcfos3jFIE",
+  authDomain: "patrol-system-e536f.firebaseapp.com",
+  projectId: "patrol-system-e536f",
+  storageBucket: "patrol-system-e536f.firebasestorage.app",
+  messagingSenderId: "928585432975",
+  appId: "1:928585432975:web:71addfacc961519c9f55fa"
+};
+
+const fbApp = initializeApp(firebaseConfig);
+const db    = getFirestore(fbApp);
+
+// Expose db + helpers to global scope for the main script
+window._db         = db;
+window._collection = collection;
+window._doc        = doc;
+window._setDoc     = setDoc;
+window._deleteDoc  = deleteDoc;
+window._onSnapshot = onSnapshot;
+window._writeBatch = writeBatch;
+
+// ── Loading overlay ──────────────────────────────
+function showLoader(msg='Carregando dados…'){
+  let el=document.getElementById('fb-loader');
+  if(!el){
+    el=document.createElement('div');
+    el.id='fb-loader';
+    el.style.cssText='position:fixed;inset:0;background:rgba(10,14,26,.92);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;font-family:DM Sans,sans-serif';
+    el.innerHTML=`<div style="width:40px;height:40px;border:3px solid #1F2D45;border-top-color:#00D4FF;border-radius:50%;animation:spin .8s linear infinite"></div><div style="color:#E8EDF5;font-size:14px;font-weight:600" id="fb-loader-msg">${msg}</div><style>@keyframes spin{to{transform:rotate(360deg)}}</style>`;
+    document.body.appendChild(el);
+  } else { document.getElementById('fb-loader-msg').textContent=msg; }
+}
+function hideLoader(){ const el=document.getElementById('fb-loader'); if(el) el.remove(); }
+
+showLoader('Conectando ao Firebase…');
+
+// ── Real-time listeners ──────────────────────────
+let loaded={posts:false,supervisors:false,collaborators:false,routes:false};
+function checkAllLoaded(){
+  if(Object.values(loaded).every(Boolean)){
+    hideLoader();
+    // Render now that all collections are loaded
+    if(typeof renderAll==='function') renderAll();
+    window._fbReady=true;
+  }
+}
+
+// Seed default data if Firestore is empty for a collection
+async function seedIfEmpty(colName, items){
+  const batch = writeBatch(db);
+  items.forEach(item => batch.set(doc(collection(db, colName), item.id), item));
+  await batch.commit();
+}
+
+// posts
+onSnapshot(collection(db,'posts'), snap=>{
+  state.posts = snap.docs.map(d=>d.data());
+  loaded.posts=true; checkAllLoaded();
+  if(window._fbReady){ renderAll(); }
+});
+
+// supervisors
+onSnapshot(collection(db,'supervisors'), snap=>{
+  state.supervisors = snap.docs.map(d=>d.data());
+  loaded.supervisors=true; checkAllLoaded();
+  if(window._fbReady){ renderAll(); }
+});
+
+// collaborators
+onSnapshot(collection(db,'collaborators'), snap=>{
+  state.collaborators = snap.docs.map(d=>d.data());
+  loaded.collaborators=true; checkAllLoaded();
+  if(window._fbReady){ renderAll(); }
+});
+
+// routes
+onSnapshot(collection(db,'routes'), snap=>{
+  state.routes = snap.docs.map(d=>d.data());
+  loaded.routes=true; checkAllLoaded();
+  if(window._fbReady){ renderAll(); }
+});
+
+// ── Seed initial data when collections are empty ──
+Promise.all([
+  new Promise(res=>{ const unsub=onSnapshot(collection(db,'posts'),    s=>{ unsub(); res(s.empty); }); }),
+  new Promise(res=>{ const unsub=onSnapshot(collection(db,'supervisors'),s=>{ unsub(); res(s.empty); }); }),
+  new Promise(res=>{ const unsub=onSnapshot(collection(db,'collaborators'),s=>{ unsub(); res(s.empty); }); }),
+  new Promise(res=>{ const unsub=onSnapshot(collection(db,'routes'),   s=>{ unsub(); res(s.empty); }); }),
+]).then(async ([noPosts,noSups,noCollabs,noRoutes])=>{
+  if(noPosts)    await seedIfEmpty('posts',    window._seedData.posts);
+  if(noSups)     await seedIfEmpty('supervisors', window._seedData.supervisors);
+  if(noCollabs)  await seedIfEmpty('collaborators', window._seedData.collaborators);
+  if(noRoutes)   await seedIfEmpty('routes',   window._seedData.routes);
+});
+
+// Update connection badge
+setTimeout(()=>{
+  const b=document.getElementById('online-badge');
+  if(b){ b.textContent='● Firebase'; b.style.background='rgba(0,255,156,.12)'; b.style.color='#00FF9C'; b.style.border='1px solid rgba(0,255,156,.3)'; b.title='Sincronizado com Firebase Firestore'; }
+},2000);
+
+</script>
 </head>
 <body>
 
@@ -223,7 +332,7 @@ body { font-family:'DM Sans',system-ui,sans-serif; background:var(--bg); min-hei
       <span>Sistema de Gestão Patrimonial</span>
     </div>
     <div class="header-spacer"></div>
-    <span class="badge" id="online-badge" style="background:rgba(0,255,156,.12);color:#00FF9C;border:1px solid rgba(0,255,156,.3)">● Online</span>
+    <span class="badge" id="online-badge" style="background:rgba(0,212,255,.12);color:#00D4FF;border:1px solid rgba(0,212,255,.3)" title="Conectando ao Firebase…">⟳ Conectando</span>
   </div>
   <div class="tab-bar">
     <button class="tab-btn active" onclick="switchTab('routes',this)">
@@ -419,36 +528,38 @@ function ic(type,size=15,color='currentColor'){
 // ════════════════════════════════════════════════
 // STATE
 // ════════════════════════════════════════════════
+// ── STATE (starts empty; Firebase fills it via onSnapshot) ──
 const state = {
-  posts:[
+  posts:[], supervisors:[], collaborators:[], routes:[],
+  postFilter:'todos', routeFilter:'todos',
+};
+
+// Seed data used only when Firestore collections are empty
+(function buildSeed(){
+  const sups=[
+    {id:uid(),name:'Carlos Mendonça',badge:'SUP-001',phone:'(11) 9 8765-4321',email:'carlos@segpro.com.br',  active:true},
+    {id:uid(),name:'Fernanda Lima',   badge:'SUP-002',phone:'(11) 9 9876-5432',email:'fernanda@segpro.com.br',active:true},
+    {id:uid(),name:'Rodrigo Tavares', badge:'SUP-003',phone:'(11) 9 7654-3210',email:'rodrigo@segpro.com.br', active:false},
+  ];
+  const posts=[
     {id:uid(),name:'Posto Central Alpha',address:'Av. Paulista, 1000',    lat:-23.5614,lng:-46.6558,type:'comercial',  active:true},
     {id:uid(),name:'Condomínio Solaris',  address:'Rua das Flores, 250',  lat:-23.5700,lng:-46.6450,type:'residencial',active:true},
     {id:uid(),name:'Shopping Norte',      address:'Av. Norte, 500',       lat:-23.5500,lng:-46.6700,type:'comercial',  active:true},
     {id:uid(),name:'Banco Meridiano',     address:'Rua XV, 80',           lat:-23.5650,lng:-46.6600,type:'bancário',   active:true},
     {id:uid(),name:'Hospital São Lucas',  address:'Rua da Saúde, 320',    lat:-23.5580,lng:-46.6500,type:'hospitalar', active:false},
-  ],
-  supervisors:[
-    {id:uid(),name:'Carlos Mendonça',badge:'SUP-001',phone:'(11) 9 8765-4321',email:'carlos@segpro.com.br',  active:true},
-    {id:uid(),name:'Fernanda Lima',   badge:'SUP-002',phone:'(11) 9 9876-5432',email:'fernanda@segpro.com.br',active:true},
-    {id:uid(),name:'Rodrigo Tavares', badge:'SUP-003',phone:'(11) 9 7654-3210',email:'rodrigo@segpro.com.br', active:false},
-  ],
-  collaborators:[],
-  routes:[],
-  // filters
-  postFilter:'todos',
-  routeFilter:'todos',
-};
-// seed references after IDs exist
-state.collaborators=[
-  {id:uid(),name:'Ana Beatriz',  badge:'VIG-101',role:'Vigilante',      supervisor:state.supervisors[0].id,active:true},
-  {id:uid(),name:'Paulo Roberto',badge:'VIG-102',role:'Vigilante',      supervisor:state.supervisors[0].id,active:true},
-  {id:uid(),name:'Márcia Santos',badge:'VIG-103',role:'Lider de Turno', supervisor:state.supervisors[1].id,active:true},
-  {id:uid(),name:'José Ferreira',badge:'VIG-104',role:'Vigilante',      supervisor:state.supervisors[2].id,active:false},
-];
-state.routes=[
-  {id:uid(),name:'Rota Paulista Manhã',supervisorId:state.supervisors[0].id,postIds:[state.posts[0].id,state.posts[1].id,state.posts[3].id],schedule:'06:00 – 14:00',status:'ativa'},
-  {id:uid(),name:'Rota Norte Tarde',   supervisorId:state.supervisors[1].id,postIds:[state.posts[2].id,state.posts[4].id],                   schedule:'14:00 – 22:00',status:'ativa'},
-];
+  ];
+  const collabs=[
+    {id:uid(),name:'Ana Beatriz',  badge:'VIG-101',role:'Vigilante',      supervisor:sups[0].id,active:true},
+    {id:uid(),name:'Paulo Roberto',badge:'VIG-102',role:'Vigilante',      supervisor:sups[0].id,active:true},
+    {id:uid(),name:'Márcia Santos',badge:'VIG-103',role:'Lider de Turno', supervisor:sups[1].id,active:true},
+    {id:uid(),name:'José Ferreira',badge:'VIG-104',role:'Vigilante',      supervisor:sups[2].id,active:false},
+  ];
+  const routes=[
+    {id:uid(),name:'Rota Paulista Manhã',supervisorId:sups[0].id,postIds:[posts[0].id,posts[1].id,posts[3].id],schedule:'06:00 – 14:00',status:'ativa'},
+    {id:uid(),name:'Rota Norte Tarde',   supervisorId:sups[1].id,postIds:[posts[2].id,posts[4].id],            schedule:'14:00 – 22:00',status:'ativa'},
+  ];
+  window._seedData={posts,supervisors:sups,collaborators:collabs,routes};
+})();
 
 // modal state
 let modalType=null, editId=null, formPostIds=[];
@@ -1002,35 +1113,43 @@ function openEditRoute(id) {
 // ════════════════════════════════════════════════
 function g(id){ const el=document.getElementById(id); return el?el.value:''; }
 
+// ── Firebase helpers ────────────────────────────────────────────────────
+function fbSet(col, item){
+  if(!window._db) return;
+  window._setDoc(window._doc(window._collection(window._db, col), item.id), item)
+    .catch(e=>{ console.error('Firebase write error:',e); toast('Erro ao salvar no Firebase.','#FF4560'); });
+}
+function fbDel(col, id){
+  if(!window._db) return;
+  window._deleteDoc(window._doc(window._collection(window._db, col), id))
+    .catch(e=>{ console.error('Firebase delete error:',e); toast('Erro ao excluir.','#FF4560'); });
+}
+
 function savePost(){
   const p={ id:editId||uid(), name:g('f_name')||'Sem nome', address:g('f_address'), lat:parseFloat(g('f_lat'))||-23.5505, lng:parseFloat(g('f_lng'))||-46.6333, type:g('f_type')||'comercial', active:g('f_active')!=='false' };
-  if(editId) state.posts=state.posts.map(x=>x.id===p.id?p:x);
-  else state.posts.push(p);
-  closeModal(); renderAll(); toast(`Posto "${p.name}" salvo!`,'#FF6B35');
+  fbSet('posts', p);
+  closeModal(); toast(`Posto "${p.name}" salvo!`,'#FF6B35');
 }
 function saveSup(){
   const s={ id:editId||uid(), name:g('f_name')||'Sem nome', badge:g('f_badge'), phone:g('f_phone'), email:g('f_email'), active:g('f_active')!=='false' };
-  if(editId) state.supervisors=state.supervisors.map(x=>x.id===s.id?s:x);
-  else state.supervisors.push(s);
-  closeModal(); renderAll(); toast(`Supervisor "${s.name}" salvo!`,'#00FF9C');
+  fbSet('supervisors', s);
+  closeModal(); toast(`Supervisor "${s.name}" salvo!`,'#00FF9C');
 }
 function saveCollab(){
   const c={ id:editId||uid(), name:g('f_name')||'Sem nome', badge:g('f_badge'), role:g('f_role')||'Vigilante', supervisor:g('f_supervisor'), active:g('f_active')!=='false' };
-  if(editId) state.collaborators=state.collaborators.map(x=>x.id===c.id?c:x);
-  else state.collaborators.push(c);
-  closeModal(); renderAll(); toast(`Colaborador "${c.name}" salvo!`,'#FFB347');
+  fbSet('collaborators', c);
+  closeModal(); toast(`Colaborador "${c.name}" salvo!`,'#FFB347');
 }
 function saveRoute(){
   const r={ id:editId||uid(), name:g('f_name')||'Nova Rota', supervisorId:g('f_supervisorId'), postIds:[...formPostIds], schedule:g('f_schedule'), status:g('f_status')||'ativa' };
-  if(editId) state.routes=state.routes.map(x=>x.id===r.id?r:x);
-  else state.routes.push(r);
-  closeModal(); renderAll(); toast(`Rota "${r.name}" salva!`,'#00D4FF');
+  fbSet('routes', r);
+  closeModal(); toast(`Rota "${r.name}" salva!`,'#00D4FF');
 }
 
-function deletePost(id)  { if(confirm('Confirmar exclusão do posto?'))       { state.posts=state.posts.filter(p=>p.id!==id); renderAll(); toast('Posto removido.','#FF4560'); } }
-function deleteSup(id)   { if(confirm('Confirmar exclusão do supervisor?'))   { state.supervisors=state.supervisors.filter(s=>s.id!==id); renderAll(); toast('Supervisor removido.','#FF4560'); } }
-function deleteCollab(id){ if(confirm('Confirmar exclusão do colaborador?'))  { state.collaborators=state.collaborators.filter(c=>c.id!==id); renderAll(); toast('Colaborador removido.','#FF4560'); } }
-function deleteRoute(id) { if(confirm('Confirmar exclusão da rota?'))         { state.routes=state.routes.filter(r=>r.id!==id); renderAll(); toast('Rota removida.','#FF4560'); } }
+function deletePost(id)  { if(confirm('Confirmar exclusão do posto?'))       { fbDel('posts',id);         toast('Posto removido.','#FF4560'); } }
+function deleteSup(id)   { if(confirm('Confirmar exclusão do supervisor?'))   { fbDel('supervisors',id);   toast('Supervisor removido.','#FF4560'); } }
+function deleteCollab(id){ if(confirm('Confirmar exclusão do colaborador?'))  { fbDel('collaborators',id); toast('Colaborador removido.','#FF4560'); } }
+function deleteRoute(id) { if(confirm('Confirmar exclusão da rota?'))         { fbDel('routes',id);        toast('Rota removida.','#FF4560'); } }
 
 // ════════════════════════════════════════════════
 // RENDER ALL + COUNTERS
@@ -1051,9 +1170,7 @@ function renderAll(){
   renderTeam();
 }
 
-renderAll();
-
-
+// Firebase onSnapshot triggers renderAll(); initial render happens after load
 // ════════════════════════════════════════════════
 // MAP TAB — Leaflet
 // ════════════════════════════════════════════════

@@ -1,0 +1,1249 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SegPro — Sistema de Gestão Patrimonial</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@300;400;600&family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:      #0A0E1A;
+  --panel:   #111827;
+  --card:    #161D2E;
+  --border:  #1F2D45;
+  --accent:  #00D4FF;
+  --accent2: #FF6B35;
+  --accent3: #00FF9C;
+  --warn:    #FFB347;
+  --text:    #E8EDF5;
+  --muted:   #6B7A99;
+  --red:     #FF4560;
+  --cyan2:   #00eaff;
+  --cyan:    #00c8f8;
+  --white:   #eef4ff;
+}
+body { font-family:'DM Sans',system-ui,sans-serif; background:var(--bg); min-height:100vh; color:var(--text); font-size:14px; }
+
+/* ── HEADER ── */
+#app-header { background:var(--panel); border-bottom:1px solid var(--border); padding:0 20px; position:sticky; top:0; z-index:100; }
+.header-top { max-width:960px; margin:0 auto; display:flex; align-items:center; gap:14px; height:58px; }
+.header-logo { display:flex; align-items:center; gap:10px; text-decoration:none; flex-shrink:0; }
+.header-logo-hex { position:relative; width:36px; height:40px; display:flex; align-items:center; justify-content:center; flex-shrink:0; filter:drop-shadow(0 0 8px rgba(0,200,248,.5)); }
+.header-logo-hex svg { position:absolute; inset:0; width:100%; height:100%; }
+.header-logo-hex .mono { position:relative; z-index:2; font-family:'Orbitron',sans-serif; font-weight:900; font-size:.82rem; letter-spacing:-1px; color:#fff; text-shadow:0 0 10px rgba(0,234,255,.6); margin-top:1px; }
+.header-logo-hex .mono span { color:var(--cyan2); }
+.header-logo-text { display:flex; flex-direction:column; line-height:1.15; }
+.header-logo-brand { font-family:'Orbitron',sans-serif; font-size:.78rem; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--white); }
+.header-logo-brand .pj { color:var(--cyan2); text-shadow:0 0 10px rgba(0,234,255,.5); }
+.header-logo-brand .sep { color:rgba(0,200,248,.35); margin:0 3px; font-weight:300; }
+.header-logo-sub { font-family:'Rajdhani',sans-serif; font-size:.58rem; letter-spacing:3px; text-transform:uppercase; color:var(--cyan); opacity:.7; }
+.header-divider { width:1px; height:28px; background:linear-gradient(to bottom,transparent,var(--border),transparent); flex-shrink:0; }
+.header-app-name { display:flex; flex-direction:column; }
+.header-app-name strong { font-weight:800; font-size:15px; letter-spacing:-.3px; }
+.header-app-name span { font-size:10px; color:var(--muted); margin-top:-1px; }
+.header-spacer { flex:1; }
+
+/* ── TABS ── */
+.tab-bar { max-width:960px; margin:0 auto; display:flex; gap:2px; }
+.tab-btn { display:flex; align-items:center; gap:6px; padding:10px 16px; background:none; border:none; border-bottom:2px solid transparent; color:var(--muted); font-weight:400; font-size:13px; cursor:pointer; transition:all .15s; font-family:inherit; }
+.tab-btn.active { border-bottom-color:var(--accent); color:var(--accent); font-weight:700; }
+.tab-btn:hover:not(.active) { color:var(--text); }
+.tab-count { background:var(--border); color:var(--muted); font-size:10px; font-weight:700; padding:1px 6px; border-radius:10px; }
+.tab-btn.active .tab-count { background:var(--accent); color:var(--bg); }
+
+/* ── BADGE ── */
+.badge { display:inline-block; font-size:10px; font-weight:700; padding:2px 7px; border-radius:20px; letter-spacing:.5px; text-transform:uppercase; white-space:nowrap; }
+
+/* ── MAIN ── */
+#main-content { max-width:960px; margin:0 auto; padding:20px 16px; }
+.tab-section { display:none; }
+.tab-section.active { display:block; }
+
+/* ── STATS ── */
+.stats-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-bottom:24px; }
+.stat-card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:16px 20px; display:flex; align-items:center; gap:14px; cursor:pointer; transition:border-color .2s; }
+.stat-card:hover { border-color:var(--accent); }
+.stat-icon { width:44px; height:44px; border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.stat-value { font-size:22px; font-weight:800; font-family:monospace; letter-spacing:-1px; }
+.stat-label { font-size:11px; color:var(--muted); margin-top:1px; font-weight:500; }
+
+/* ── SECTION HEADER ── */
+.section-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; flex-wrap:wrap; gap:10px; }
+.section-header h2 { font-size:18px; font-weight:800; }
+.section-header-left { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+.filter-chips { display:flex; gap:6px; flex-wrap:wrap; }
+.chip { padding:4px 10px; border-radius:20px; font-size:11px; font-weight:600; cursor:pointer; border:1px solid var(--border); background:none; color:var(--muted); font-family:inherit; transition:all .15s; }
+.chip.active { background:var(--accent); color:var(--bg); border-color:var(--accent); }
+.chip:hover:not(.active) { border-color:var(--muted); color:var(--text); }
+
+/* ── BUTTONS ── */
+.btn { display:inline-flex; align-items:center; gap:6px; border:none; border-radius:8px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer; font-family:inherit; transition:opacity .15s; }
+.btn:hover { opacity:.85; }
+.btn-sm { padding:7px 12px; font-size:12px; }
+.icon-btn { background:none; border:none; cursor:pointer; padding:2px; line-height:0; color:var(--muted); transition:color .1s; }
+.icon-btn:hover { color:var(--text); }
+.icon-btn.danger { color:var(--red); }
+
+/* ── ROUTE CARDS ── */
+.route-card { background:var(--card); border:1px solid var(--border); border-radius:14px; margin-bottom:16px; overflow:hidden; transition:border-color .2s; }
+.route-card:hover { border-color:rgba(0,212,255,.3); }
+.route-card-header { padding:14px 18px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--border); }
+.route-icon { width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.route-body { padding:14px 18px; display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+@media(max-width:540px){ .route-body { grid-template-columns:1fr; } }
+.posts-list-label { font-size:11px; color:var(--muted); font-weight:600; letter-spacing:.6px; margin-bottom:8px; text-transform:uppercase; }
+.post-list-item { display:flex; align-items:center; gap:8px; padding:6px 0; }
+.post-list-item + .post-list-item { border-top:1px solid rgba(31,45,69,.4); }
+.post-order-bubble { width:20px; height:20px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:9px; font-weight:800; flex-shrink:0; background:var(--accent); color:var(--bg); }
+
+/* ── MINI MAP ── */
+.mini-map { position:relative; height:220px; background:#0D1526; border-radius:10px; overflow:hidden; border:1px solid var(--border); }
+.mini-map-empty { height:220px; display:flex; align-items:center; justify-content:center; color:var(--muted); font-size:13px; }
+.map-grid-h,.map-grid-v { position:absolute; border-color:var(--border); border-style:dashed; opacity:.4; pointer-events:none; }
+.map-grid-h { left:0; right:0; border-top-width:1px; border-bottom:none; border-left:none; border-right:none; }
+.map-grid-v { top:0; bottom:0; border-left-width:1px; border-top:none; border-bottom:none; border-right:none; }
+.map-note { position:absolute; bottom:6px; right:8px; font-size:9px; color:var(--muted); }
+
+/* ── POSTS GRID ── */
+.posts-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:12px; }
+.post-card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:14px 16px; transition:border-color .2s; }
+.post-card:hover { border-color:rgba(255,107,53,.35); }
+.post-card.inactive { opacity:.65; }
+.post-card-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:10px; }
+.post-coords { margin-top:8px; font-size:10px; color:var(--muted); font-family:monospace; }
+
+/* ── TEAM TABLE ── */
+.team-table { background:var(--card); border:1px solid var(--border); border-radius:12px; margin-bottom:24px; overflow:hidden; }
+.team-row { display:flex; align-items:center; gap:12px; padding:12px 16px; transition:background .1s; }
+.team-row + .team-row { border-top:1px solid var(--border); }
+.team-row.inactive { opacity:.6; }
+.team-row:hover { background:rgba(255,255,255,.02); }
+.team-avatar { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:800; flex-shrink:0; }
+.team-row-actions { display:flex; gap:6px; align-items:center; margin-left:auto; }
+.sub-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; flex-wrap:wrap; gap:8px; }
+.sub-header h3 { font-size:16px; font-weight:800; display:flex; align-items:center; gap:8px; }
+
+/* ── SUPERVISOR DETAIL PANEL ── */
+.detail-panel { background:rgba(0,212,255,.04); border:1px solid rgba(0,212,255,.15); border-radius:10px; padding:12px 14px; margin-top:10px; }
+.detail-panel-title { font-size:10px; font-weight:700; letter-spacing:.8px; text-transform:uppercase; color:var(--accent); margin-bottom:8px; }
+
+/* ── MODAL ── */
+.modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.65); z-index:1000; align-items:center; justify-content:center; padding:16px; }
+.modal-overlay.open { display:flex; }
+.modal-box { background:var(--panel); border:1px solid var(--border); border-radius:16px; width:100%; max-width:540px; max-height:90vh; overflow:auto; box-shadow:0 24px 80px rgba(0,0,0,.65); animation:modalIn .22s ease; }
+@keyframes modalIn { from{opacity:0;transform:scale(.96) translateY(10px)} to{opacity:1;transform:scale(1) translateY(0)} }
+.modal-head { display:flex; align-items:center; justify-content:space-between; padding:18px 24px; border-bottom:1px solid var(--border); }
+.modal-head span { font-weight:700; font-size:16px; }
+.modal-body { padding:20px 24px; }
+.modal-footer { display:flex; gap:10px; margin-top:8px; }
+
+/* ── FORM ── */
+.field { margin-bottom:14px; }
+.field label { display:block; font-size:11px; font-weight:600; color:var(--muted); margin-bottom:5px; letter-spacing:.6px; text-transform:uppercase; }
+.field input, .field select { width:100%; background:var(--card); border:1px solid var(--border); border-radius:8px; padding:9px 12px; color:var(--text); font-size:13px; outline:none; font-family:inherit; transition:border-color .15s; }
+.field input:focus, .field select:focus { border-color:var(--accent); }
+.field input::placeholder { color:var(--muted); }
+.grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+
+/* ── GEO FIELD ── */
+.geo-row { display:flex; gap:8px; align-items:flex-end; }
+.geo-row .field { flex:1; margin-bottom:0; }
+.geo-btn { flex-shrink:0; height:38px; padding:0 12px; border-radius:8px; border:1px solid var(--border); background:var(--card); color:var(--accent); font-size:12px; font-weight:700; cursor:pointer; font-family:inherit; display:flex; align-items:center; gap:6px; white-space:nowrap; transition:all .2s; }
+.geo-btn:hover { background:rgba(0,212,255,.1); border-color:var(--accent); }
+.geo-btn:disabled { opacity:.5; cursor:wait; }
+.geo-status { font-size:10px; margin-top:5px; min-height:14px; transition:color .2s; }
+.geo-status.ok   { color:var(--accent3); }
+.geo-status.err  { color:var(--red); }
+.geo-status.load { color:var(--warn); }
+
+/* ── POSTS CHECKLIST ── */
+.posts-checklist { max-height:200px; overflow-y:auto; border:1px solid var(--border); border-radius:8px; padding:4px; }
+.posts-check-item { display:flex; align-items:center; gap:8px; padding:7px 10px; border-radius:6px; cursor:pointer; transition:background .1s; }
+.posts-check-item:hover { background:rgba(0,212,255,.05); }
+.posts-check-item.selected { background:rgba(0,212,255,.09); }
+.check-box { width:16px; height:16px; border-radius:4px; border:2px solid var(--border); background:none; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:all .1s; }
+.posts-check-item.selected .check-box { border-color:var(--accent); background:var(--accent); }
+
+/* ── TOAST ── */
+#toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:10px 18px; font-size:13px; font-weight:600; opacity:0; pointer-events:none; transition:all .3s; z-index:2000; white-space:nowrap; box-shadow:0 8px 32px rgba(0,0,0,.5); }
+#toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+/* ── EMPTY STATE ── */
+.empty-state { text-align:center; padding:48px; color:var(--muted); font-size:13px; }
+
+/* ── LINK BUTTON ── */
+.link-btn { background:none; border:none; color:var(--accent); font-size:11px; font-weight:600; cursor:pointer; font-family:inherit; padding:0; text-decoration:underline; text-underline-offset:2px; }
+.link-btn:hover { opacity:.7; }
+
+/* ── ADDRESS SUGGESTIONS ── */
+#addr-suggestions > div:last-child { border-bottom:none; }
+
+::-webkit-scrollbar { width:6px; height:6px; }
+::-webkit-scrollbar-track { background:var(--bg); }
+::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+</style>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCyFLm6FzXh00h0wR6Y31I5yAZqZQC_J94&libraries=geometry"></script>
+</head>
+<body>
+
+<!-- HEADER -->
+<header id="app-header">
+  <div class="header-top">
+    <a class="header-logo" href="#" title="PJ Tecnologia e Sistemas">
+      <div class="header-logo-hex">
+        <svg viewBox="0 0 100 110" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="hHexG" x1="0" y1="0" x2="100" y2="110" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#0d3878"/><stop offset="100%" stop-color="#051225"/>
+            </linearGradient>
+            <linearGradient id="hHexS" x1="0" y1="0" x2="100" y2="110" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#00eaff"/><stop offset="50%" stop-color="#0088cc"/><stop offset="100%" stop-color="#00c8f8"/>
+            </linearGradient>
+          </defs>
+          <polygon points="50,4 96,28 96,82 50,106 4,82 4,28" fill="url(#hHexG)" stroke="url(#hHexS)" stroke-width="2.5"/>
+          <polygon points="50,12 88,33 88,78 50,98 12,78 12,33" fill="none" stroke="rgba(0,200,248,0.18)" stroke-width="1"/>
+          <circle cx="50" cy="4" r="2.5" fill="#00eaff" opacity=".8"/>
+          <circle cx="96" cy="28" r="2.5" fill="#00eaff" opacity=".8"/>
+          <circle cx="96" cy="82" r="2.5" fill="#00eaff" opacity=".8"/>
+          <circle cx="50" cy="106" r="2.5" fill="#00eaff" opacity=".8"/>
+          <circle cx="4" cy="82" r="2.5" fill="#00eaff" opacity=".8"/>
+          <circle cx="4" cy="28" r="2.5" fill="#00eaff" opacity=".8"/>
+        </svg>
+        <div class="mono">P<span>J</span></div>
+      </div>
+      <div class="header-logo-text">
+        <div class="header-logo-brand"><span class="pj">PJ</span><span class="sep">·</span>TECNOLOGIA</div>
+        <div class="header-logo-sub">e Sistemas</div>
+      </div>
+    </a>
+    <div class="header-divider"></div>
+    <div class="header-app-name">
+      <strong>SegPro</strong>
+      <span>Sistema de Gestão Patrimonial</span>
+    </div>
+    <div class="header-spacer"></div>
+    <span class="badge" id="online-badge" style="background:rgba(0,255,156,.12);color:#00FF9C;border:1px solid rgba(0,255,156,.3)">● Online</span>
+  </div>
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('routes',this)">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg>
+      Rotas <span class="tab-count" id="tc-routes">0</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('posts',this)">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z M12 10a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg>
+      Postos <span class="tab-count" id="tc-posts">0</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('team',this)">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2 M23 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75 M9 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"/></svg>
+      Equipe <span class="tab-count" id="tc-team">0</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('map',this)" id="tab-btn-map">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 6v16l7-4 8 4 7-4V2l-7 4-8-4-7 4z M8 2v16 M16 6v16"/></svg>
+      Mapa <span class="tab-count" id="tc-map" style="background:rgba(0,212,255,.2);color:var(--accent)">AO VIVO</span>
+    </button>
+  </div>
+</header>
+
+<main id="main-content">
+  <!-- STATS -->
+  <div class="stats-row">
+    <div class="stat-card" onclick="switchTab('routes',document.querySelector('.tab-btn'))" title="Ver rotas">
+      <div class="stat-icon" style="background:rgba(0,212,255,.12);color:var(--accent)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg>
+      </div>
+      <div><div class="stat-value" id="stat-routes" style="color:var(--accent)">0</div><div class="stat-label">Rotas Ativas</div></div>
+    </div>
+    <div class="stat-card" onclick="switchTabByKey('posts')" title="Ver postos">
+      <div class="stat-icon" style="background:rgba(255,107,53,.12);color:var(--accent2)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z M12 10a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg>
+      </div>
+      <div><div class="stat-value" id="stat-posts" style="color:var(--accent2)">0</div><div class="stat-label">Postos Ativos</div></div>
+    </div>
+    <div class="stat-card" onclick="switchTabByKey('team')" title="Ver supervisores">
+      <div class="stat-icon" style="background:rgba(0,255,156,.12);color:var(--accent3)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+      </div>
+      <div><div class="stat-value" id="stat-sups" style="color:var(--accent3)">0</div><div class="stat-label">Supervisores</div></div>
+    </div>
+    <div class="stat-card" onclick="switchTabByKey('team')" title="Ver colaboradores">
+      <div class="stat-icon" style="background:rgba(255,179,71,.12);color:var(--warn)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2 M23 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75 M9 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"/></svg>
+      </div>
+      <div><div class="stat-value" id="stat-collabs" style="color:var(--warn)">0</div><div class="stat-label">Colaboradores</div></div>
+    </div>
+  </div>
+
+  <!-- ROUTES TAB -->
+  <section class="tab-section active" id="tab-routes">
+    <div class="section-header">
+      <div class="section-header-left">
+        <h2>Gestão de Rotas</h2>
+        <div class="filter-chips" id="route-filter-chips"></div>
+      </div>
+      <button class="btn" style="background:var(--accent);color:var(--bg)" onclick="openModal('add_route')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14 M5 12h14"/></svg>
+        Nova Rota
+      </button>
+    </div>
+    <div id="routes-list"></div>
+  </section>
+
+  <!-- POSTS TAB -->
+  <section class="tab-section" id="tab-posts">
+    <div class="section-header">
+      <div class="section-header-left">
+        <h2>Banco de Postos</h2>
+        <div class="filter-chips" id="post-filter-chips"></div>
+      </div>
+      <button class="btn" style="background:var(--accent2);color:#fff" onclick="openModal('add_post')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14 M5 12h14"/></svg>
+        Novo Posto
+      </button>
+    </div>
+    <div class="posts-grid" id="posts-grid"></div>
+  </section>
+
+  <!-- TEAM TAB -->
+  <section class="tab-section" id="tab-team">
+    <div class="sub-header">
+      <h3>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent3)" stroke-width="2" stroke-linecap="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        Supervisores
+      </h3>
+      <button class="btn btn-sm" style="background:var(--accent3);color:var(--bg)" onclick="openModal('add_sup')">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14 M5 12h14"/></svg>
+        Adicionar
+      </button>
+    </div>
+    <div class="team-table" id="sups-list"></div>
+    <div class="sub-header" style="margin-top:12px">
+      <h3>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--warn)" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2 M23 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75 M9 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"/></svg>
+        Colaboradores
+      </h3>
+      <button class="btn btn-sm" style="background:var(--warn);color:var(--bg)" onclick="openModal('add_collab')">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14 M5 12h14"/></svg>
+        Adicionar
+      </button>
+    </div>
+    <div class="team-table" id="collabs-list"></div>
+  </section>
+  <!-- MAP TAB -->
+  <section class="tab-section" id="tab-map" style="padding:0;margin:-20px -16px;">
+    <div id="map-toolbar" style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--panel);border-bottom:1px solid var(--border);flex-wrap:wrap;">
+      <div style="display:flex;gap:6px;flex-wrap:wrap;flex:1" id="map-legend"></div>
+      <div style="display:flex;gap:6px;flex-shrink:0">
+        <button class="btn btn-sm" id="map-fit-btn" style="background:var(--card);border:1px solid var(--border);color:var(--text)" onclick="mapFitAll()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+          Ajustar
+        </button>
+        <button class="btn btn-sm" id="map-toggle-posts" style="background:var(--card);border:1px solid var(--border);color:var(--accent2)" onclick="mapTogglePosts()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z M12 10a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg>
+          Postos
+        </button>
+      </div>
+    </div>
+    <div id="main-map" style="width:100%;height:calc(100vh - 148px);"></div>
+  </section>
+
+</main>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal-overlay" onclick="handleOverlayClick(event)">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div class="modal-head">
+      <span id="modal-title"></span>
+      <button class="icon-btn" onclick="closeModal()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18 M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script>
+// ════════════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════════════
+function uid() { return Math.random().toString(36).slice(2,9); }
+
+function haversine(a,b){
+  const R=6371, dLat=(b.lat-a.lat)*Math.PI/180, dLon=(b.lng-a.lng)*Math.PI/180;
+  const x=Math.sin(dLat/2)**2+Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.sin(dLon/2)**2;
+  return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));
+}
+function nearestNeighbor(ps){
+  if(!ps.length) return [];
+  let rem=[...ps],sorted=[];
+  sorted.push(rem.shift());
+  let cur=sorted[0];
+  while(rem.length){
+    let best=0,bd=Infinity;
+    rem.forEach((p,i)=>{const d=haversine(cur,p);if(d<bd){bd=d;best=i;}});
+    sorted.push(rem[best]);cur=rem[best];rem.splice(best,1);
+  }
+  return sorted;
+}
+function totalDist(ps){ let d=0; for(let i=1;i<ps.length;i++) d+=haversine(ps[i-1],ps[i]); return d.toFixed(1); }
+
+function toast(msg, color='#00FF9C'){
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.style.color=color;
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t=setTimeout(()=>el.classList.remove('show'),2800);
+}
+
+function badge(label, color){
+  return `<span class="badge" style="background:${color}20;color:${color};border:1px solid ${color}40">${label}</span>`;
+}
+function ic(type,size=15,color='currentColor'){
+  const p={
+    edit:'M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7 M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z',
+    trash:'M3 6h18 M8 6V4h8v2 M19 6l-1 14H6L5 6',
+    x:'M18 6L6 18 M6 6l12 12',
+    check:'M20 6L9 17l-5-5',
+    clock:'M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z M12 6v6l4 2',
+    pin:'M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z M12 10a1 1 0 1 0 0-2 1 1 0 0 0 0 2z',
+    loc:'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z',
+    nav:'M3 11l19-9-9 19-2-8-8-2z',
+    user:'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2 M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z',
+  };
+  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="${p[type]}"/></svg>`;
+}
+
+// ════════════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════════════
+const state = {
+  posts:[
+    {id:uid(),name:'Posto Central Alpha',address:'Av. Paulista, 1000',    lat:-23.5614,lng:-46.6558,type:'comercial',  active:true},
+    {id:uid(),name:'Condomínio Solaris',  address:'Rua das Flores, 250',  lat:-23.5700,lng:-46.6450,type:'residencial',active:true},
+    {id:uid(),name:'Shopping Norte',      address:'Av. Norte, 500',       lat:-23.5500,lng:-46.6700,type:'comercial',  active:true},
+    {id:uid(),name:'Banco Meridiano',     address:'Rua XV, 80',           lat:-23.5650,lng:-46.6600,type:'bancário',   active:true},
+    {id:uid(),name:'Hospital São Lucas',  address:'Rua da Saúde, 320',    lat:-23.5580,lng:-46.6500,type:'hospitalar', active:false},
+  ],
+  supervisors:[
+    {id:uid(),name:'Carlos Mendonça',badge:'SUP-001',phone:'(11) 9 8765-4321',email:'carlos@segpro.com.br',  active:true},
+    {id:uid(),name:'Fernanda Lima',   badge:'SUP-002',phone:'(11) 9 9876-5432',email:'fernanda@segpro.com.br',active:true},
+    {id:uid(),name:'Rodrigo Tavares', badge:'SUP-003',phone:'(11) 9 7654-3210',email:'rodrigo@segpro.com.br', active:false},
+  ],
+  collaborators:[],
+  routes:[],
+  // filters
+  postFilter:'todos',
+  routeFilter:'todos',
+};
+// seed references after IDs exist
+state.collaborators=[
+  {id:uid(),name:'Ana Beatriz',  badge:'VIG-101',role:'Vigilante',      supervisor:state.supervisors[0].id,active:true},
+  {id:uid(),name:'Paulo Roberto',badge:'VIG-102',role:'Vigilante',      supervisor:state.supervisors[0].id,active:true},
+  {id:uid(),name:'Márcia Santos',badge:'VIG-103',role:'Lider de Turno', supervisor:state.supervisors[1].id,active:true},
+  {id:uid(),name:'José Ferreira',badge:'VIG-104',role:'Vigilante',      supervisor:state.supervisors[2].id,active:false},
+];
+state.routes=[
+  {id:uid(),name:'Rota Paulista Manhã',supervisorId:state.supervisors[0].id,postIds:[state.posts[0].id,state.posts[1].id,state.posts[3].id],schedule:'06:00 – 14:00',status:'ativa'},
+  {id:uid(),name:'Rota Norte Tarde',   supervisorId:state.supervisors[1].id,postIds:[state.posts[2].id,state.posts[4].id],                   schedule:'14:00 – 22:00',status:'ativa'},
+];
+
+// modal state
+let modalType=null, editId=null, formPostIds=[];
+
+// ════════════════════════════════════════════════
+// MINI MAP
+// ════════════════════════════════════════════════
+function renderMiniMap(posts, highlight){
+  if(!posts.length) return `<div class="mini-map-empty">Nenhum posto selecionado</div>`;
+  const lats=posts.map(p=>p.lat), lngs=posts.map(p=>p.lng);
+  const minLat=Math.min(...lats), maxLat=Math.max(...lats);
+  const minLng=Math.min(...lngs), maxLng=Math.max(...lngs);
+  const padLat=(maxLat-minLat)*0.2||0.005, padLng=(maxLng-minLng)*0.2||0.005;
+  const toX=lng=>((lng-minLng+padLng)/(maxLng-minLng+2*padLng))*100;
+  const toY=lat=>(1-(lat-minLat+padLat)/(maxLat-minLat+2*padLat))*100;
+  const sorted=highlight||posts;
+  let html=`<div class="mini-map">`;
+  [20,40,60,80].forEach(v=>{
+    html+=`<div class="map-grid-h" style="top:${v}%"></div>`;
+    html+=`<div class="map-grid-v" style="left:${v}%"></div>`;
+  });
+  html+=`<svg style="position:absolute;inset:0;width:100%;height:100%">`;
+  sorted.forEach((p,i)=>{
+    if(!i) return;
+    const prev=sorted[i-1];
+    html+=`<line x1="${toX(prev.lng)}%" y1="${toY(prev.lat)}%" x2="${toX(p.lng)}%" y2="${toY(p.lat)}%" stroke="#00D4FF" stroke-width="1.5" stroke-dasharray="4 3" opacity=".7"/>`;
+  });
+  html+=`</svg>`;
+  posts.forEach(p=>{
+    const idx=sorted.findIndex(s=>s.id===p.id);
+    const color=idx>=0?'#00D4FF':'#6B7A99';
+    html+=`
+      <div style="position:absolute;left:${toX(p.lng)}%;top:${toY(p.lat)}%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;z-index:10">
+        <div style="width:24px;height:24px;border-radius:50% 50% 50% 0;background:${color};transform:rotate(-45deg);border:2px solid #0A0E1A;display:flex;align-items:center;justify-content:center;box-shadow:0 0 8px ${color}55">
+          <span style="transform:rotate(45deg);font-size:9px;font-weight:700;color:#0A0E1A">${idx>=0?idx+1:''}</span>
+        </div>
+        <div style="margin-top:2px;background:rgba(0,0,0,.5);padding:1px 4px;border-radius:3px;font-size:9px;color:#E8EDF5;white-space:nowrap;max-width:80px;overflow:hidden;text-overflow:ellipsis">${p.name.split(' ')[0]}</div>
+      </div>`;
+  });
+  html+=`<div class="map-note">Visualização esquemática</div></div>`;
+  return html;
+}
+
+// ════════════════════════════════════════════════
+// RENDER — ROUTES
+// ════════════════════════════════════════════════
+function buildRouteFilterChips(){
+  const sups=[...new Set(state.routes.map(r=>r.supervisorId).filter(Boolean))];
+  let html=`<button class="chip ${state.routeFilter==='todos'?'active':''}" onclick="setRouteFilter('todos')">Todas</button>`;
+  sups.forEach(sid=>{
+    const s=state.supervisors.find(x=>x.id===sid);
+    if(s) html+=`<button class="chip ${state.routeFilter===sid?'active':''}" onclick="setRouteFilter('${sid}')">${s.name.split(' ')[0]}</button>`;
+  });
+  ['ativa','suspensa','encerrada'].forEach(st=>{
+    if(state.routes.some(r=>r.status===st))
+      html+=`<button class="chip ${state.routeFilter===st?'active':''}" onclick="setRouteFilter('${st}')">${st.charAt(0).toUpperCase()+st.slice(1)}</button>`;
+  });
+  document.getElementById('route-filter-chips').innerHTML=html;
+}
+function setRouteFilter(v){ state.routeFilter=v; renderRoutes(); }
+
+function renderRoutes(){
+  buildRouteFilterChips();
+  let filtered=state.routes;
+  if(state.routeFilter!=='todos'){
+    filtered=filtered.filter(r=>r.supervisorId===state.routeFilter||r.status===state.routeFilter);
+  }
+  const el=document.getElementById('routes-list');
+  if(!filtered.length){
+    el.innerHTML=`<div class="empty-state">${state.routes.length?'Nenhuma rota para este filtro.':'Nenhuma rota cadastrada ainda.'}</div>`;
+    return;
+  }
+  el.innerHTML=filtered.map(route=>{
+    const sup=state.supervisors.find(s=>s.id===route.supervisorId);
+    const rPosts=nearestNeighbor(route.postIds.map(id=>state.posts.find(p=>p.id===id)).filter(Boolean));
+    const dist=totalDist(rPosts);
+    const sc=route.status==='ativa'?'#00FF9C':route.status==='suspensa'?'#FFB347':'#6B7A99';
+    return `
+    <div class="route-card" id="route-${route.id}">
+      <div class="route-card-header">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="route-icon" style="background:rgba(0,212,255,.12);color:var(--accent)">${ic('nav',18)}</div>
+          <div>
+            <div style="font-weight:700;font-size:15px">${route.name}</div>
+            <div style="font-size:11px;color:var(--muted);display:flex;gap:8px;align-items:center;margin-top:2px">
+              ${ic('clock',11,'#6B7A99')} ${route.schedule||'—'}
+              ${sup?`<span>•
+                <button class="link-btn" onclick="goToSup('${sup.id}')">${sup.name}</button>
+              </span>`:''}
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          ${badge(route.status,sc)}
+          <button class="icon-btn" onclick="openEditRoute('${route.id}')">${ic('edit')}</button>
+          <button class="icon-btn danger" onclick="deleteRoute('${route.id}')">${ic('trash')}</button>
+        </div>
+      </div>
+      <div class="route-body">
+        <div>
+          <div class="posts-list-label">Ordem de Visita (${rPosts.length} postos · ${dist} km)</div>
+          ${rPosts.length?rPosts.map((p,i)=>`
+            <div class="post-list-item">
+              <div class="post-order-bubble">${i+1}</div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+                  <button class="link-btn" style="font-size:12px" onclick="goToPost('${p.id}')">${p.name}</button>
+                </div>
+                <div style="font-size:10px;color:var(--muted)">${p.address}</div>
+              </div>
+              ${!p.active?badge('Inativo','#6B7A99'):''}
+            </div>`).join(''):`<div style="font-size:12px;color:var(--muted)">Nenhum posto na rota.</div>`}
+        </div>
+        ${renderMiniMap(rPosts,rPosts)}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ════════════════════════════════════════════════
+// RENDER — POSTS
+// ════════════════════════════════════════════════
+function buildPostFilterChips(){
+  const types=[...new Set(state.posts.map(p=>p.type))];
+  let html=`<button class="chip ${state.postFilter==='todos'?'active':''}" onclick="setPostFilter('todos')">Todos</button>`;
+  types.forEach(t=>{ html+=`<button class="chip ${state.postFilter===t?'active':''}" onclick="setPostFilter('${t}')">${t.charAt(0).toUpperCase()+t.slice(1)}</button>`; });
+  html+=`<button class="chip ${state.postFilter==='ativos'?'active':''}" onclick="setPostFilter('ativos')">Ativos</button>`;
+  html+=`<button class="chip ${state.postFilter==='inativos'?'active':''}" onclick="setPostFilter('inativos')">Inativos</button>`;
+  document.getElementById('post-filter-chips').innerHTML=html;
+}
+function setPostFilter(v){ state.postFilter=v; renderPosts(); }
+
+function renderPosts(){
+  buildPostFilterChips();
+  let filtered=state.posts;
+  if(state.postFilter==='ativos')   filtered=filtered.filter(p=>p.active);
+  else if(state.postFilter==='inativos') filtered=filtered.filter(p=>!p.active);
+  else if(state.postFilter!=='todos') filtered=filtered.filter(p=>p.type===state.postFilter);
+  const el=document.getElementById('posts-grid');
+  if(!filtered.length){
+    el.innerHTML=`<div class="empty-state" style="grid-column:1/-1">${state.posts.length?'Nenhum posto para este filtro.':'Nenhum posto cadastrado.'}</div>`;
+    return;
+  }
+  // check which posts are in routes
+  const inRoutes={};
+  state.routes.forEach(r=>r.postIds.forEach(pid=>{
+    if(!inRoutes[pid]) inRoutes[pid]=[];
+    inRoutes[pid].push(r.name);
+  }));
+  el.innerHTML=filtered.map(p=>`
+    <div class="post-card ${p.active?'':'inactive'}" id="post-${p.id}">
+      <div class="post-card-header">
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="color:var(--accent2)">${ic('pin',16,'#FF6B35')}</div>
+          <div>
+            <div style="font-weight:700;font-size:13px">${p.name}</div>
+            <div style="font-size:11px;color:var(--muted)">${p.address}</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button class="icon-btn" onclick="openEditPost('${p.id}')">${ic('edit')}</button>
+          <button class="icon-btn danger" onclick="deletePost('${p.id}')">${ic('trash')}</button>
+        </div>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        ${badge(p.type,'#FF6B35')}
+        ${badge(p.active?'Ativo':'Inativo',p.active?'#00FF9C':'#6B7A99')}
+      </div>
+      <div class="post-coords">${p.lat.toFixed(4)}, ${p.lng.toFixed(4)}</div>
+      ${inRoutes[p.id]?`
+        <div style="margin-top:8px;font-size:10px;color:var(--muted)">
+          ${ic('nav',10,'#00D4FF')} Em rotas: ${inRoutes[p.id].map(n=>`<button class="link-btn" style="font-size:10px" onclick="goToRouteByPost('${p.id}')">${n}</button>`).join(', ')}
+        </div>`:''}
+    </div>`).join('');
+}
+
+// ════════════════════════════════════════════════
+// RENDER — TEAM
+// ════════════════════════════════════════════════
+function renderTeam(){
+  // supervisors
+  const sl=document.getElementById('sups-list');
+  sl.innerHTML=state.supervisors.length?state.supervisors.map(s=>{
+    const myCollabs=state.collaborators.filter(c=>c.supervisor===s.id);
+    const myRoutes=state.routes.filter(r=>r.supervisorId===s.id);
+    return `
+    <div class="team-row ${s.active?'':'inactive'}" id="sup-${s.id}">
+      <div class="team-avatar" style="background:rgba(0,255,156,.14);color:var(--accent3)">${s.name[0]}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:700;font-size:13px">${s.name}</div>
+        <div style="font-size:11px;color:var(--muted)">${s.badge} · ${s.phone}</div>
+        ${myCollabs.length||myRoutes.length?`
+        <div style="display:flex;gap:10px;margin-top:5px;flex-wrap:wrap">
+          ${myCollabs.length?`<span style="font-size:10px;color:var(--muted)">${ic('user',10,'#6B7A99')} ${myCollabs.map(c=>`<button class="link-btn" style="font-size:10px" onclick="goToCollab('${c.id}')">${c.name.split(' ')[0]}</button>`).join(', ')}</span>`:''}
+          ${myRoutes.length?`<span style="font-size:10px;color:var(--muted)">${ic('nav',10,'#6B7A99')} ${myRoutes.map(r=>`<button class="link-btn" style="font-size:10px" onclick="goToRoute('${r.id}')">${r.name}</button>`).join(', ')}</span>`:''}
+        </div>`:''}
+      </div>
+      <div class="team-row-actions">
+        ${badge(s.active?'Ativo':'Inativo',s.active?'#00FF9C':'#6B7A99')}
+        <button class="icon-btn" onclick="openEditSup('${s.id}')">${ic('edit')}</button>
+        <button class="icon-btn danger" onclick="deleteSup('${s.id}')">${ic('trash')}</button>
+      </div>
+    </div>`;
+  }).join(''):`<div class="empty-state" style="padding:24px">Nenhum supervisor cadastrado.</div>`;
+
+  // collaborators
+  const cl=document.getElementById('collabs-list');
+  cl.innerHTML=state.collaborators.length?state.collaborators.map(c=>{
+    const sup=state.supervisors.find(s=>s.id===c.supervisor);
+    return `
+    <div class="team-row ${c.active?'':'inactive'}" id="collab-${c.id}">
+      <div class="team-avatar" style="background:rgba(255,179,71,.14);color:var(--warn)">${c.name[0]}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:700;font-size:13px">${c.name}</div>
+        <div style="font-size:11px;color:var(--muted)">
+          ${c.badge} · ${c.role}
+          ${sup?` · <button class="link-btn" style="font-size:11px" onclick="goToSup('${sup.id}')">${sup.name}</button>`:''}
+        </div>
+      </div>
+      <div class="team-row-actions">
+        ${badge(c.active?'Ativo':'Inativo',c.active?'#00FF9C':'#6B7A99')}
+        <button class="icon-btn" onclick="openEditCollab('${c.id}')">${ic('edit')}</button>
+        <button class="icon-btn danger" onclick="deleteCollab('${c.id}')">${ic('trash')}</button>
+      </div>
+    </div>`;
+  }).join(''):`<div class="empty-state" style="padding:24px">Nenhum colaborador cadastrado.</div>`;
+}
+
+// ════════════════════════════════════════════════
+// CROSS-TAB NAVIGATION
+// ════════════════════════════════════════════════
+function switchTabByKey(key){
+  const btns=document.querySelectorAll('.tab-btn');
+  const map={routes:0,posts:1,team:2,map:3};
+  switchTab(key, btns[map[key]]);
+}
+function switchTab(tab, btn){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-section').forEach(s=>s.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-'+tab).classList.add('active');
+  if(tab==='map'){ setTimeout(()=>{ initMap(); if(gMap) google.maps.event.trigger(gMap,'resize'); },80); }
+}
+
+function goToCollab(collabId){
+  switchTabByKey('team');
+  setTimeout(()=>{
+    const el=document.getElementById('collab-'+collabId);
+    if(el){ el.scrollIntoView({behavior:'smooth',block:'center'}); el.style.background='rgba(255,179,71,.07)'; setTimeout(()=>el.style.background='',1800); }
+  },100);
+}
+function goToPost(postId){
+  switchTabByKey('posts');
+  setTimeout(()=>{
+    const el=document.getElementById('post-'+postId);
+    if(el){ el.scrollIntoView({behavior:'smooth',block:'center'}); el.style.borderColor='var(--accent2)'; setTimeout(()=>el.style.borderColor='',1800); }
+  },100);
+}
+function goToSup(supId){
+  switchTabByKey('team');
+  setTimeout(()=>{
+    const el=document.getElementById('sup-'+supId);
+    if(el){ el.scrollIntoView({behavior:'smooth',block:'center'}); el.style.background='rgba(0,255,156,.07)'; setTimeout(()=>el.style.background='',1800); }
+  },100);
+}
+function goToRoute(routeId){
+  switchTabByKey('routes');
+  state.routeFilter='todos';
+  setTimeout(()=>{
+    renderRoutes();
+    setTimeout(()=>{
+      const card=document.getElementById('route-'+routeId);
+      if(card){ card.scrollIntoView({behavior:'smooth',block:'center'}); card.style.borderColor='var(--accent)'; setTimeout(()=>card.style.borderColor='',1800); }
+    },80);
+  },100);
+}
+function goToRouteByPost(postId){
+  state.routeFilter='todos';
+  switchTabByKey('routes');
+  setTimeout(()=>{
+    renderRoutes();
+    // highlight all routes containing this post
+    setTimeout(()=>{
+      state.routes.filter(r=>r.postIds.includes(postId)).forEach(r=>{
+        const card=document.getElementById('route-'+r.id);
+        if(card){ card.scrollIntoView({behavior:'smooth',block:'center'}); card.style.borderColor='var(--accent)'; setTimeout(()=>card.style.borderColor='',1800); }
+      });
+    },80);
+  },100);
+}
+
+// ════════════════════════════════════════════════
+// GEOLOCATION + REVERSE GEOCODING
+// ════════════════════════════════════════════════
+function useMyLocation(){
+  const btn=document.getElementById('geo-btn');
+  const status=document.getElementById('geo-status');
+  if(!navigator.geolocation){ status.textContent='Geolocalização não suportada neste navegador.'; status.className='geo-status err'; return; }
+  btn.disabled=true; btn.innerHTML=`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> Localizando…`;
+  status.textContent='Obtendo posição GPS…'; status.className='geo-status load';
+  navigator.geolocation.getCurrentPosition(
+    async pos=>{
+      const lat=pos.coords.latitude, lng=pos.coords.longitude;
+      document.getElementById('f_lat').value=lat.toFixed(6);
+      document.getElementById('f_lng').value=lng.toFixed(6);
+      status.textContent='Posição obtida! Buscando endereço…'; status.className='geo-status load';
+      try{
+        const res=await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=pt-BR`,{headers:{'Accept-Language':'pt-BR'}});
+        const data=await res.json();
+        if(data && data.display_name){
+          const addr=data.address;
+          const parts=[];
+          if(addr.road) parts.push(addr.road+(addr.house_number?' '+addr.house_number:''));
+          if(addr.suburb||addr.neighbourhood) parts.push(addr.suburb||addr.neighbourhood);
+          if(addr.city||addr.town||addr.village) parts.push(addr.city||addr.town||addr.village);
+          const formatted=parts.length?parts.join(', '):data.display_name.split(',').slice(0,3).join(',').trim();
+          document.getElementById('f_address').value=formatted;
+          status.textContent=`✓ Endereço preenchido automaticamente`;
+          status.className='geo-status ok';
+        } else {
+          status.textContent=`✓ Coordenadas preenchidas (endereço não encontrado)`;
+          status.className='geo-status ok';
+        }
+      } catch(e){
+        status.textContent='✓ Coordenadas preenchidas (falha ao buscar endereço)';
+        status.className='geo-status ok';
+      }
+      btn.disabled=false; btn.innerHTML=`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Usar Localização`;
+    },
+    err=>{
+      const msgs={1:'Permissão negada. Permita o acesso à localização no navegador.',2:'Posição indisponível.',3:'Tempo esgotado.'};
+      status.textContent=msgs[err.code]||'Erro ao obter localização.'; status.className='geo-status err';
+      btn.disabled=false; btn.innerHTML=`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Usar Localização`;
+    },
+    {enableHighAccuracy:true,timeout:12000}
+  );
+}
+
+// ════════════════════════════════════════════════
+// ADDRESS SEARCH (FORWARD GEOCODING)
+// ════════════════════════════════════════════════
+let addrSearchTimer=null;
+function onAddressInput(val){
+  clearTimeout(addrSearchTimer);
+  const box=document.getElementById('addr-suggestions');
+  if(!box) return;
+  if(val.trim().length<4){ box.style.display='none'; return; }
+  addrSearchTimer=setTimeout(()=>searchAddress(val),500);
+}
+async function searchAddress(query){
+  const box=document.getElementById('addr-suggestions');
+  if(!box) return;
+  box.style.display='block';
+  box.innerHTML=`<div style="padding:10px 12px;font-size:12px;color:var(--muted)">Buscando...</div>`;
+  try{
+    const res=await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5&accept-language=pt-BR&countrycodes=br`,{headers:{'Accept-Language':'pt-BR'}});
+    const data=await res.json();
+    if(!data.length){ box.innerHTML=`<div style="padding:10px 12px;font-size:12px;color:var(--muted)">Nenhum resultado encontrado.</div>`; return; }
+    box.innerHTML=data.map((r,i)=>{
+      const parts=r.display_name.split(',');
+      const short=parts.slice(0,3).join(',').trim();
+      return `<div onclick="selectAddress('${encodeURIComponent(r.display_name)}',${r.lat},${r.lon})"
+        style="padding:9px 12px;font-size:12px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .1s"
+        onmouseover="this.style.background='rgba(0,212,255,.08)'" onmouseout="this.style.background=''"
+        ><div style="font-weight:600;color:var(--text)">${short}</div><div style="font-size:10px;color:var(--muted);margin-top:2px">${parts.slice(3,5).join(',').trim()}</div></div>`;
+    }).join('');
+  } catch(e){
+    box.innerHTML=`<div style="padding:10px 12px;font-size:12px;color:var(--red)">Erro ao buscar endereço.</div>`;
+  }
+}
+function selectAddress(encodedName, lat, lng){
+  const name=decodeURIComponent(encodedName);
+  const parts=name.split(',');
+  const short=parts.slice(0,3).join(',').trim();
+  const addrInput=document.getElementById('f_address');
+  if(addrInput) addrInput.value=short;
+  const latInput=document.getElementById('f_lat');
+  const lngInput=document.getElementById('f_lng');
+  if(latInput) latInput.value=parseFloat(lat).toFixed(6);
+  if(lngInput) lngInput.value=parseFloat(lng).toFixed(6);
+  const box=document.getElementById('addr-suggestions');
+  if(box) box.style.display='none';
+  const status=document.getElementById('geo-status');
+  if(status){ status.textContent='✓ Endereço e coordenadas preenchidos'; status.className='geo-status ok'; }
+}
+// Close suggestions on click outside
+document.addEventListener('click',e=>{
+  const box=document.getElementById('addr-suggestions');
+  if(box && !box.contains(e.target) && e.target.id!=='f_address') box.style.display='none';
+});
+function closeModal(){ document.getElementById('modal-overlay').classList.remove('open'); modalType=null; editId=null; formPostIds=[]; }
+function handleOverlayClick(e){ if(e.target===document.getElementById('modal-overlay')) closeModal(); }
+function openModal(type){ modalType=type; editId=null; formPostIds=[]; buildModal(); document.getElementById('modal-overlay').classList.add('open'); }
+
+function buildModal(){
+  const titles={add_post:'Novo Posto',edit_post:'Editar Posto',add_sup:'Novo Supervisor',edit_sup:'Editar Supervisor',add_collab:'Novo Colaborador',edit_collab:'Editar Colaborador',add_route:'Nova Rota',edit_route:'Editar Rota'};
+  document.getElementById('modal-title').textContent=titles[modalType]||'';
+  let item={};
+  if(editId){
+    if(modalType.includes('post'))   item=state.posts.find(p=>p.id===editId)||{};
+    if(modalType.includes('sup'))    item=state.supervisors.find(s=>s.id===editId)||{};
+    if(modalType.includes('collab')) item=state.collaborators.find(c=>c.id===editId)||{};
+    if(modalType.includes('route'))  item=state.routes.find(r=>r.id===editId)||{};
+  }
+  let html='';
+
+  if(modalType.includes('post')){
+    html=`
+      <div class="field"><label>Nome do Posto</label><input id="f_name" value="${item.name||''}" placeholder="Ex: Condomínio Park Ville"/></div>
+
+      <div class="field">
+        <label>Endereço</label>
+        <div class="geo-row">
+          <div class="field" style="margin-bottom:0;position:relative">
+            <input id="f_address" value="${item.address||''}" placeholder="Digite o endereço ou use a localização" oninput="onAddressInput(this.value)" autocomplete="off"/>
+            <div id="addr-suggestions" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:200;background:var(--panel);border:1px solid var(--border);border-radius:8px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.5)"></div>
+          </div>
+          <button class="geo-btn" id="geo-btn" onclick="useMyLocation()" type="button">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            GPS
+          </button>
+        </div>
+        <div class="geo-status" id="geo-status"></div>
+      </div>
+
+      <div class="grid-2">
+        <div class="field"><label>Latitude</label><input id="f_lat" type="number" step="any" value="${item.lat||''}" placeholder="-23.5505"/></div>
+        <div class="field"><label>Longitude</label><input id="f_lng" type="number" step="any" value="${item.lng||''}" placeholder="-46.6333"/></div>
+      </div>
+      <div class="field"><label>Tipo</label>
+        <select id="f_type">
+          ${['comercial','residencial','bancário','hospitalar','industrial','educacional'].map(t=>`<option value="${t}" ${(item.type||'comercial')===t?'selected':''}>${t.charAt(0).toUpperCase()+t.slice(1)}</option>`).join('')}
+        </select>
+      </div>
+      <div class="field"><label>Status</label>
+        <select id="f_active">
+          <option value="true" ${item.active!==false?'selected':''}>Ativo</option>
+          <option value="false" ${item.active===false?'selected':''}>Inativo</option>
+        </select>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" style="flex:1;background:none;border:1px solid var(--border);color:var(--text)" onclick="closeModal()">Cancelar</button>
+        <button class="btn" style="flex:1;background:var(--accent2);color:#fff" onclick="savePost()">Salvar</button>
+      </div>`;
+
+  } else if(modalType.includes('sup')){
+    html=`
+      <div class="field"><label>Nome Completo</label><input id="f_name" value="${item.name||''}" placeholder="Nome do supervisor"/></div>
+      <div class="field"><label>Matrícula / Crachá</label><input id="f_badge" value="${item.badge||''}" placeholder="SUP-001"/></div>
+      <div class="field"><label>Telefone</label><input id="f_phone" value="${item.phone||''}" placeholder="(11) 9 0000-0000"/></div>
+      <div class="field"><label>E-mail</label><input id="f_email" value="${item.email||''}" placeholder="email@empresa.com.br"/></div>
+      <div class="field"><label>Status</label>
+        <select id="f_active">
+          <option value="true" ${item.active!==false?'selected':''}>Ativo</option>
+          <option value="false" ${item.active===false?'selected':''}>Inativo</option>
+        </select>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" style="flex:1;background:none;border:1px solid var(--border);color:var(--text)" onclick="closeModal()">Cancelar</button>
+        <button class="btn" style="flex:1;background:var(--accent3);color:var(--bg)" onclick="saveSup()">Salvar</button>
+      </div>`;
+
+  } else if(modalType.includes('collab')){
+    html=`
+      <div class="field"><label>Nome Completo</label><input id="f_name" value="${item.name||''}" placeholder="Nome do colaborador"/></div>
+      <div class="field"><label>Matrícula / Crachá</label><input id="f_badge" value="${item.badge||''}" placeholder="VIG-001"/></div>
+      <div class="field"><label>Cargo / Função</label>
+        <select id="f_role">
+          ${['Vigilante','Lider de Turno','Supervisor de Campo','Porteiro','Monitor'].map(r=>`<option value="${r}" ${(item.role||'Vigilante')===r?'selected':''}>${r}</option>`).join('')}
+        </select>
+      </div>
+      <div class="field"><label>Supervisor Responsável</label>
+        <select id="f_supervisor">
+          <option value="">— Selecionar —</option>
+          ${state.supervisors.map(s=>`<option value="${s.id}" ${item.supervisor===s.id?'selected':''}>${s.name} ${s.active?'':'(inativo)'}</option>`).join('')}
+        </select>
+      </div>
+      <div class="field"><label>Status</label>
+        <select id="f_active">
+          <option value="true" ${item.active!==false?'selected':''}>Ativo</option>
+          <option value="false" ${item.active===false?'selected':''}>Inativo</option>
+        </select>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" style="flex:1;background:none;border:1px solid var(--border);color:var(--text)" onclick="closeModal()">Cancelar</button>
+        <button class="btn" style="flex:1;background:var(--warn);color:var(--bg)" onclick="saveCollab()">Salvar</button>
+      </div>`;
+
+  } else if(modalType.includes('route')){
+    if(!formPostIds.length && item.postIds) formPostIds=[...item.postIds];
+    const selPosts=nearestNeighbor(formPostIds.map(id=>state.posts.find(p=>p.id===id)).filter(Boolean));
+    html=`
+      <div class="field"><label>Nome da Rota</label><input id="f_name" value="${item.name||''}" placeholder="Ex: Rota Sul Noturna"/></div>
+      <div class="field"><label>Supervisor Responsável</label>
+        <select id="f_supervisorId">
+          <option value="">— Selecionar —</option>
+          ${state.supervisors.filter(s=>s.active).map(s=>`<option value="${s.id}" ${(item.supervisorId||'')===s.id?'selected':''}>${s.name} (${s.badge})</option>`).join('')}
+        </select>
+      </div>
+      <div class="field"><label>Turno / Horário</label><input id="f_schedule" value="${item.schedule||''}" placeholder="06:00 – 14:00"/></div>
+      <div class="field"><label>Status</label>
+        <select id="f_status">
+          ${['ativa','suspensa','encerrada'].map(s=>`<option value="${s}" ${(item.status||'ativa')===s?'selected':''}>${s.charAt(0).toUpperCase()+s.slice(1)}</option>`).join('')}
+        </select>
+      </div>
+      <div class="field"><label>Postos da Rota (selecione um ou mais)</label>
+        <div class="posts-checklist">
+          ${state.posts.length?state.posts.map(p=>{
+            const sel=formPostIds.includes(p.id);
+            return `<div class="posts-check-item ${sel?'selected':''}" onclick="togglePostInForm('${p.id}')" style="${!p.active?'opacity:.5':''}">
+              <div class="check-box">${sel?ic('check',10,'#0A0E1A'):''}</div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:12px;font-weight:600">${p.name}</div>
+                <div style="font-size:10px;color:var(--muted)">${p.address}</div>
+              </div>
+              ${badge(p.type,'#FF6B35')}
+            </div>`;
+          }).join(''):`<div style="padding:16px;text-align:center;font-size:12px;color:var(--muted)">Nenhum posto cadastrado. <button class="link-btn" onclick="closeModal();openModal('add_post')">Criar posto</button></div>`}
+        </div>
+      </div>
+      ${selPosts.length>1?`
+      <div style="margin-bottom:12px">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:6px">Rota otimizada · ${totalDist(selPosts)} km total</div>
+        ${renderMiniMap(selPosts,selPosts)}
+      </div>`:''}
+      <div class="modal-footer">
+        <button class="btn" style="flex:1;background:none;border:1px solid var(--border);color:var(--text)" onclick="closeModal()">Cancelar</button>
+        <button class="btn" style="flex:1;background:var(--accent);color:var(--bg)" onclick="saveRoute()">Salvar Rota</button>
+      </div>`;
+  }
+  document.getElementById('modal-body').innerHTML=html;
+}
+
+function togglePostInForm(postId){
+  formPostIds=formPostIds.includes(postId)?formPostIds.filter(id=>id!==postId):[...formPostIds,postId];
+  buildModal();
+}
+
+// edit openers
+function openEditPost(id)  { modalType='edit_post';  editId=id; formPostIds=[]; buildModal(); document.getElementById('modal-overlay').classList.add('open'); }
+function openEditSup(id)   { modalType='edit_sup';   editId=id; formPostIds=[]; buildModal(); document.getElementById('modal-overlay').classList.add('open'); }
+function openEditCollab(id){ modalType='edit_collab';editId=id; formPostIds=[]; buildModal(); document.getElementById('modal-overlay').classList.add('open'); }
+function openEditRoute(id) {
+  const r=state.routes.find(x=>x.id===id);
+  modalType='edit_route'; editId=id; formPostIds=r?[...r.postIds]:[];
+  buildModal(); document.getElementById('modal-overlay').classList.add('open');
+}
+
+// ════════════════════════════════════════════════
+// SAVE / DELETE
+// ════════════════════════════════════════════════
+function g(id){ const el=document.getElementById(id); return el?el.value:''; }
+
+function savePost(){
+  const p={ id:editId||uid(), name:g('f_name')||'Sem nome', address:g('f_address'), lat:parseFloat(g('f_lat'))||-23.5505, lng:parseFloat(g('f_lng'))||-46.6333, type:g('f_type')||'comercial', active:g('f_active')!=='false' };
+  if(editId) state.posts=state.posts.map(x=>x.id===p.id?p:x);
+  else state.posts.push(p);
+  closeModal(); renderAll(); toast(`Posto "${p.name}" salvo!`,'#FF6B35');
+}
+function saveSup(){
+  const s={ id:editId||uid(), name:g('f_name')||'Sem nome', badge:g('f_badge'), phone:g('f_phone'), email:g('f_email'), active:g('f_active')!=='false' };
+  if(editId) state.supervisors=state.supervisors.map(x=>x.id===s.id?s:x);
+  else state.supervisors.push(s);
+  closeModal(); renderAll(); toast(`Supervisor "${s.name}" salvo!`,'#00FF9C');
+}
+function saveCollab(){
+  const c={ id:editId||uid(), name:g('f_name')||'Sem nome', badge:g('f_badge'), role:g('f_role')||'Vigilante', supervisor:g('f_supervisor'), active:g('f_active')!=='false' };
+  if(editId) state.collaborators=state.collaborators.map(x=>x.id===c.id?c:x);
+  else state.collaborators.push(c);
+  closeModal(); renderAll(); toast(`Colaborador "${c.name}" salvo!`,'#FFB347');
+}
+function saveRoute(){
+  const r={ id:editId||uid(), name:g('f_name')||'Nova Rota', supervisorId:g('f_supervisorId'), postIds:[...formPostIds], schedule:g('f_schedule'), status:g('f_status')||'ativa' };
+  if(editId) state.routes=state.routes.map(x=>x.id===r.id?r:x);
+  else state.routes.push(r);
+  closeModal(); renderAll(); toast(`Rota "${r.name}" salva!`,'#00D4FF');
+}
+
+function deletePost(id)  { if(confirm('Confirmar exclusão do posto?'))       { state.posts=state.posts.filter(p=>p.id!==id); renderAll(); toast('Posto removido.','#FF4560'); } }
+function deleteSup(id)   { if(confirm('Confirmar exclusão do supervisor?'))   { state.supervisors=state.supervisors.filter(s=>s.id!==id); renderAll(); toast('Supervisor removido.','#FF4560'); } }
+function deleteCollab(id){ if(confirm('Confirmar exclusão do colaborador?'))  { state.collaborators=state.collaborators.filter(c=>c.id!==id); renderAll(); toast('Colaborador removido.','#FF4560'); } }
+function deleteRoute(id) { if(confirm('Confirmar exclusão da rota?'))         { state.routes=state.routes.filter(r=>r.id!==id); renderAll(); toast('Rota removida.','#FF4560'); } }
+
+// ════════════════════════════════════════════════
+// RENDER ALL + COUNTERS
+// ════════════════════════════════════════════════
+function renderAll(){
+  // stats
+  document.getElementById('stat-routes').textContent  = state.routes.filter(r=>r.status==='ativa').length;
+  document.getElementById('stat-posts').textContent   = state.posts.filter(p=>p.active).length;
+  document.getElementById('stat-sups').textContent    = state.supervisors.filter(s=>s.active).length;
+  document.getElementById('stat-collabs').textContent = state.collaborators.filter(c=>c.active).length;
+  // tab counters
+  document.getElementById('tc-routes').textContent = state.routes.length;
+  document.getElementById('tc-posts').textContent  = state.posts.length;
+  document.getElementById('tc-team').textContent   = state.supervisors.length+state.collaborators.length;
+  // tabs
+  renderRoutes();
+  renderPosts();
+  renderTeam();
+}
+
+renderAll();
+
+
+// ════════════════════════════════════════════════
+// MAP TAB — Leaflet
+// ════════════════════════════════════════════════
+let gMap = null;
+let gMapObjects = [];
+let showPostMarkers = true;
+let postMarkersArr = [];
+
+const ROUTE_COLORS = ['#00D4FF','#FF6B35','#00FF9C','#FFB347','#FF4560','#A78BFA','#34D399','#F472B6'];
+
+const DARK_STYLE = [
+  {elementType:'geometry',stylers:[{color:'#0d1526'}]},
+  {elementType:'labels.text.stroke',stylers:[{color:'#0d1526'}]},
+  {elementType:'labels.text.fill',stylers:[{color:'#6b7a99'}]},
+  {featureType:'administrative',elementType:'geometry',stylers:[{color:'#1f2d45'}]},
+  {featureType:'administrative.locality',elementType:'labels.text.fill',stylers:[{color:'#c4c8d2'}]},
+  {featureType:'poi',elementType:'labels.text.fill',stylers:[{color:'#6b7a99'}]},
+  {featureType:'poi.park',elementType:'geometry',stylers:[{color:'#111827'}]},
+  {featureType:'road',elementType:'geometry',stylers:[{color:'#1f2d45'}]},
+  {featureType:'road',elementType:'geometry.stroke',stylers:[{color:'#111827'}]},
+  {featureType:'road',elementType:'labels.text.fill',stylers:[{color:'#6b7a99'}]},
+  {featureType:'road.highway',elementType:'geometry',stylers:[{color:'#2a3f5f'}]},
+  {featureType:'road.highway',elementType:'labels.text.fill',stylers:[{color:'#aab4c8'}]},
+  {featureType:'transit',elementType:'geometry',stylers:[{color:'#1a2540'}]},
+  {featureType:'water',elementType:'geometry',stylers:[{color:'#07111f'}]},
+  {featureType:'water',elementType:'labels.text.fill',stylers:[{color:'#3d5a7a'}]}
+];
+
+function initMap(){
+  if(gMap) return;
+  gMap = new google.maps.Map(document.getElementById('main-map'),{
+    center:{lat:-23.5505,lng:-46.6333},
+    zoom:12,
+    styles:DARK_STYLE,
+    mapTypeControl:true,
+    mapTypeControlOptions:{
+      style:google.maps.MapTypeControlStyle.HORIZONTAL_BAR,
+      position:google.maps.ControlPosition.TOP_RIGHT,
+      mapTypeIds:['roadmap','satellite','hybrid']
+    },
+    fullscreenControl:true,
+    streetViewControl:true,
+    zoomControl:true,
+    gestureHandling:'greedy'
+  });
+  renderMapLayers();
+}
+
+function clearMapObjects(){
+  gMapObjects.forEach(o=>{ try{ o.setMap(null); }catch(e){} });
+  gMapObjects=[];
+  postMarkersArr=[];
+}
+
+function renderMapLayers(){
+  if(!gMap) return;
+  clearMapObjects();
+  const bounds=new google.maps.LatLngBounds();
+  let hasPoints=false;
+  const infoWindow=new google.maps.InfoWindow();
+
+  state.routes.forEach((route,ri)=>{
+    const color=ROUTE_COLORS[ri%ROUTE_COLORS.length];
+    const rPosts=nearestNeighbor(route.postIds.map(id=>state.posts.find(p=>p.id===id)).filter(Boolean));
+    if(!rPosts.length) return;
+
+    const path=rPosts.map(p=>({lat:p.lat,lng:p.lng}));
+    path.forEach(pt=>{bounds.extend(pt);hasPoints=true;});
+
+    // Glow underline
+    const polyBg=new google.maps.Polyline({path,geodesic:true,strokeColor:color,strokeOpacity:0.15,strokeWeight:10,map:gMap,zIndex:0});
+    gMapObjects.push(polyBg);
+
+    // Dashed route line
+    const poly=new google.maps.Polyline({
+      path,geodesic:true,strokeColor:color,strokeOpacity:0,
+      icons:[{icon:{path:'M 0,-1 0,1',strokeOpacity:1,strokeWeight:3,scale:4},offset:'0',repeat:'18px'}],
+      map:gMap,zIndex:1
+    });
+    gMapObjects.push(poly);
+
+    [poly,polyBg].forEach(p=>p.addListener('click',()=>goToRoute(route.id)));
+
+    // Numbered stop markers
+    rPosts.forEach((p,i)=>{
+      const m=new google.maps.Marker({
+        position:{lat:p.lat,lng:p.lng},map:gMap,
+        icon:{
+          path:'M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z',
+          fillColor:color,fillOpacity:1,strokeColor:'#0A0E1A',strokeWeight:2,scale:1.8,
+          anchor:new google.maps.Point(12,22),labelOrigin:new google.maps.Point(12,9)
+        },
+        label:{text:String(i+1),color:'#0A0E1A',fontWeight:'900',fontSize:'10px'},
+        title:p.name,zIndex:10
+      });
+      gMapObjects.push(m);
+      const sc=route.status==='ativa'?'#00FF9C':route.status==='suspensa'?'#FFB347':'#6B7A99';
+      m.addListener('click',()=>{
+        infoWindow.setContent(`<div style="font-family:'DM Sans',sans-serif;min-width:200px;padding:4px 2px">
+          <div style="font-weight:800;font-size:14px;color:#111;margin-bottom:3px">${p.name}</div>
+          <div style="font-size:12px;color:#666;margin-bottom:8px">${p.address}</div>
+          <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px">
+            <span style="background:${color}22;color:${color};border:1px solid ${color}55;border-radius:10px;padding:2px 8px;font-size:11px;font-weight:700">#${i+1} · ${route.name}</span>
+            <span style="background:#FF6B3522;color:#FF6B35;border:1px solid #FF6B3555;border-radius:10px;padding:2px 8px;font-size:11px;font-weight:700">${p.type}</span>
+            <span style="background:${sc}22;color:${sc};border:1px solid ${sc}55;border-radius:10px;padding:2px 8px;font-size:11px;font-weight:700">${route.status}</span>
+          </div>
+          <div style="font-size:10px;color:#999">${p.lat.toFixed(5)}, ${p.lng.toFixed(5)}</div>
+        </div>`);
+        infoWindow.open(gMap,m);
+      });
+    });
+  });
+
+  // Standalone posts (not in any route)
+  const postsInRoutes=new Set(state.routes.flatMap(r=>r.postIds));
+  state.posts.filter(p=>p.active&&!postsInRoutes.has(p.id)).forEach(p=>{
+    bounds.extend({lat:p.lat,lng:p.lng}); hasPoints=true;
+    const m=new google.maps.Marker({
+      position:{lat:p.lat,lng:p.lng},map:gMap,
+      icon:{path:google.maps.SymbolPath.CIRCLE,fillColor:'#FF6B35',fillOpacity:1,strokeColor:'#0A0E1A',strokeWeight:2,scale:9},
+      title:p.name,zIndex:5,visible:showPostMarkers
+    });
+    gMapObjects.push(m);
+    postMarkersArr.push(m);
+    m.addListener('click',()=>{
+      infoWindow.setContent(`<div style="font-family:'DM Sans',sans-serif;min-width:180px;padding:4px 2px">
+        <div style="font-weight:800;font-size:14px;color:#111;margin-bottom:3px">${p.name}</div>
+        <div style="font-size:12px;color:#666;margin-bottom:6px">${p.address}</div>
+        <span style="background:#FF6B3522;color:#FF6B35;border:1px solid #FF6B3555;border-radius:10px;padding:2px 8px;font-size:11px;font-weight:700">${p.type}</span>
+        <div style="margin-top:6px;font-size:11px;color:#f97316;font-weight:600">⚠ Sem rota atribuída</div>
+      </div>`);
+      infoWindow.open(gMap,m);
+    });
+  });
+
+  buildMapLegend();
+  if(hasPoints) gMap.fitBounds(bounds,{top:40,right:40,bottom:40,left:40});
+}
+
+function buildMapLegend(){
+  const leg=document.getElementById('map-legend');
+  if(!leg) return;
+  const items=state.routes.map((r,ri)=>{
+    const color=ROUTE_COLORS[ri%ROUTE_COLORS.length];
+    const sc=r.status==='ativa'?'#00FF9C':r.status==='suspensa'?'#FFB347':'#6B7A99';
+    const cnt=r.postIds.filter(id=>state.posts.find(p=>p.id===id)).length;
+    return `<div onclick="mapFocusRoute('${r.id}')" style="display:flex;align-items:center;gap:5px;padding:4px 9px;border-radius:20px;background:${color}15;border:1px solid ${color}40;cursor:pointer;transition:background .15s" onmouseover="this.style.background='${color}30'" onmouseout="this.style.background='${color}15'">
+      <div style="width:14px;height:3px;background:${color};border-radius:2px;flex-shrink:0"></div>
+      <span style="font-size:11px;font-weight:700;color:${color};white-space:nowrap">${r.name}</span>
+      <span style="font-size:10px;color:var(--muted)">${cnt}p</span>
+      <span style="font-size:9px;color:${sc}">●</span>
+    </div>`;
+  });
+  leg.innerHTML=items.length?items.join(''):`<span style="font-size:12px;color:var(--muted)">Nenhuma rota cadastrada ainda</span>`;
+}
+
+function mapFitAll(){
+  if(!gMap) return;
+  const pts=state.posts.filter(p=>p.active);
+  if(!pts.length) return;
+  const b=new google.maps.LatLngBounds();
+  pts.forEach(p=>b.extend({lat:p.lat,lng:p.lng}));
+  gMap.fitBounds(b,{top:40,right:40,bottom:40,left:40});
+}
+
+function mapFocusRoute(routeId){
+  if(!gMap) return;
+  const route=state.routes.find(r=>r.id===routeId);
+  if(!route) return;
+  const rPosts=route.postIds.map(id=>state.posts.find(p=>p.id===id)).filter(Boolean);
+  if(!rPosts.length) return;
+  const b=new google.maps.LatLngBounds();
+  rPosts.forEach(p=>b.extend({lat:p.lat,lng:p.lng}));
+  gMap.fitBounds(b,{top:60,right:60,bottom:60,left:60});
+}
+
+function mapTogglePosts(){
+  showPostMarkers=!showPostMarkers;
+  postMarkersArr.forEach(m=>m.setVisible(showPostMarkers));
+  const btn=document.getElementById('map-toggle-posts');
+  if(btn){btn.style.opacity=showPostMarkers?'1':'.45';btn.style.borderColor=showPostMarkers?'var(--accent2)':'var(--border)';}
+}
+
+// Auto-refresh map when state changes
+const _origRenderAll=renderAll;
+function renderAll(){
+  _origRenderAll();
+  if(gMap) renderMapLayers();
+}
+
+</script>
+</body>
+</html>

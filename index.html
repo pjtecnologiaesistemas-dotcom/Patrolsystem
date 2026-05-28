@@ -997,22 +997,31 @@ function fbDel(col, id){
 function savePost(){
   const p={ id:editId||uid(), name:g('f_name')||'Sem nome', address:g('f_address'), lat:parseFloat(g('f_lat'))||-23.5505, lng:parseFloat(g('f_lng'))||-46.6333, type:g('f_type')||'comercial', active:g('f_active')!=='false' };
   fbSet('posts', p);
-  closeModal(); toast(`Posto "${p.name}" salvo!`,'#FF6B35');
+  const idx=state.posts.findIndex(x=>x.id===p.id);
+  if(idx>=0) state.posts[idx]=p; else state.posts.push(p);
+  closeModal(); renderAll(); toast(`Posto "${p.name}" salvo!`,'#FF6B35');
 }
 function saveSup(){
   const s={ id:editId||uid(), name:g('f_name')||'Sem nome', badge:g('f_badge'), phone:g('f_phone'), email:g('f_email'), active:g('f_active')!=='false' };
   fbSet('supervisors', s);
-  closeModal(); toast(`Supervisor "${s.name}" salvo!`,'#00FF9C');
+  // Atualiza estado local imediatamente (não depende do listener do Firebase)
+  const idx=state.supervisors.findIndex(x=>x.id===s.id);
+  if(idx>=0) state.supervisors[idx]=s; else state.supervisors.push(s);
+  closeModal(); renderAll(); toast(`Supervisor "${s.name}" salvo!`,'#00FF9C');
 }
 function saveCollab(){
   const c={ id:editId||uid(), name:g('f_name')||'Sem nome', badge:g('f_badge'), role:g('f_role')||'Vigilante', supervisor:g('f_supervisor'), active:g('f_active')!=='false' };
   fbSet('collaborators', c);
-  closeModal(); toast(`Colaborador "${c.name}" salvo!`,'#FFB347');
+  const idx=state.collaborators.findIndex(x=>x.id===c.id);
+  if(idx>=0) state.collaborators[idx]=c; else state.collaborators.push(c);
+  closeModal(); renderAll(); toast(`Colaborador "${c.name}" salvo!`,'#FFB347');
 }
 function saveRoute(){
   const r={ id:editId||uid(), name:g('f_name')||'Nova Rota', supervisorId:g('f_supervisorId'), postIds:[...formPostIds], schedule:g('f_schedule'), status:g('f_status')||'ativa' };
   fbSet('routes', r);
-  closeModal(); toast(`Rota "${r.name}" salva!`,'#00D4FF');
+  const idx=state.routes.findIndex(x=>x.id===r.id);
+  if(idx>=0) state.routes[idx]=r; else state.routes.push(r);
+  closeModal(); renderAll(); toast(`Rota "${r.name}" salva!`,'#00D4FF');
 }
 
 function deletePost(id)  { if(confirm('Confirmar exclusão do posto?'))       { fbDel('posts',id);         toast('Posto removido.','#FF4560'); } }
